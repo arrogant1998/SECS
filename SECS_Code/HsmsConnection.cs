@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
+using Newtonsoft.Json.Linq;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO.Pipelines;
@@ -65,7 +66,7 @@ namespace SECS_Code
         }
         public static bool T8_Enabled = false;
         //test
-        public static int id_bytes;
+        public static int id_bytes = 0;
         public async Task Start() => _startImpl();
         public HsmsConnection(IConfiguration _configuration)
         {
@@ -101,7 +102,7 @@ namespace SECS_Code
 
                     try
                     {
-                        id_bytes = new Random(Guid.NewGuid().GetHashCode()).Next();
+                        id_bytes++;
                         using SecsMessage test = new SecsMessage(6, 1)
                         {
                             SecsItem = Item.L(
@@ -160,8 +161,7 @@ namespace SECS_Code
 
 
                             _socket = socket;
-                            _socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReceiveTimeout, true);
-                            _socket.ReceiveTimeout = T8;
+                            _socket.NoDelay = true;
                             ChangeConnectionState(ConnectionState.Connected);
                             connected = true;
                         }
@@ -203,8 +203,7 @@ namespace SECS_Code
                         try
                         {
                             _socket = await server.AcceptAsync().ConfigureAwait(false);
-                            _socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReceiveTimeout, true);
-                            _socket.ReceiveTimeout = T8;
+                            _socket.NoDelay = true;
                             _socket.Blocking = false;
                             _socket.ReceiveBufferSize = 8192;
                             ChangeConnectionState(ConnectionState.Connected);
@@ -303,7 +302,7 @@ namespace SECS_Code
                     Utility.Log(4, "HSMS Connected Successfully!");
                     T8_Enabled = false;
                     timer7.Enabled = false;
-                    LinkTest_Enabled = LinkTest_temp;
+                    //LinkTest_Enabled = LinkTest_temp;
                     break;
                 case ConnectionState.Retry:
                     if (_isDisposed)
@@ -440,12 +439,15 @@ namespace SECS_Code
                 while (true)
                 {
                     var received = await _socket.ReceiveAsync(memory, SocketFlags.None);
-                    Console.WriteLine($"received: {received}");
-                    for(int i = 0; i < received; i++)
+                    if(received > 0)
                     {
-                        Console.Write("0x" + memory[i].ToString("x2") + ", ");
+                        for (int i = 0; i < received; i++)
+                        {
+                            Console.Write("0x" + memory[i].ToString("x2") + ", ");
+                        }
+                        Console.WriteLine();
                     }
-                    Console.WriteLine();
+                    
                     if (received > 0)
                     {
                         if (!section_flag)
@@ -541,41 +543,51 @@ namespace SECS_Code
                                 receive_comp(bytes, cancellation);
                                 receive_bytes_remain = (int)receive_byts;
                                 //檢查剩下封包
-                                receive_count[0] = memory[receive_bytes_remain + 3];
-                                receive_count[1] = memory[receive_bytes_remain + 2];
-                                receive_count[2] = memory[receive_bytes_remain + 1];
-                                receive_count[3] = memory[receive_bytes_remain + 0];
-                                receive_byts = BitConverter.ToUInt32(receive_count);
-                                receive_byts = receive_byts + 4;
-                                if ((received - receive_bytes_remain) == receive_byts)
+                                while (receive_bytes_remain < received)
                                 {
-                                    section_flag = false;
-                                    bytes = new byte[receive_byts];
-                                    Array.Copy(memory, receive_bytes_remain, bytes, 0, receive_byts);
-                                    foreach (var item in bytes)
+                                    receive_count[0] = memory[receive_bytes_remain + 3];
+                                    receive_count[1] = memory[receive_bytes_remain + 2];
+                                    receive_count[2] = memory[receive_bytes_remain + 1];
+                                    receive_count[3] = memory[receive_bytes_remain + 0];
+                                    receive_byts = BitConverter.ToUInt32(receive_count);
+                                    receive_byts = receive_byts + 4;
+                                    if ((received - receive_bytes_remain) == receive_byts)
                                     {
-                                        Console.Write(item.ToString("x2") + ", ");
-                                    }
-                                    Console.WriteLine();
-                                    receive_comp(bytes, cancellation);
-                                }
-                                else
-                                {
-                                    if((received - receive_bytes_remain) > receive_byts)
-                                    {
-                                        Console.WriteLine("Start T8 Timer");
-                                        StartT8Timer();
-                                        receive_bytes_temp = received - receive_bytes_remain;
-                                        section_bytes = new byte[receive_byts];
-                                        Array.Copy(memory, 0, section_bytes, 0, received);
-                                        section_flag = true;
+                                        section_flag = false;
+                                        bytes = new byte[receive_byts];
+                                        Array.Copy(memory, receive_bytes_remain, bytes, 0, receive_byts);
+                                        foreach (var item in bytes)
+                                        {
+                                            Console.Write(item.ToString("x2") + ", ");
+                                        }
+                                        Console.WriteLine();
+                                        receive_comp(bytes, cancellation);
+                                        break;
                                     }
                                     else
                                     {
-                                        // 需加入多個封包產生黏包問題
+                                        if ((received - receive_bytes_remain) < receive_byts) // 剩下的資料為封包分段
+                                        {
+                                            Console.WriteLine("Start T8 Timer");
+                                            StartT8Timer();
+                                            receive_bytes_temp = received - receive_bytes_remain;
+                                            section_bytes = new byte[receive_byts];
+                                            Array.Copy(memory, receive_bytes_remain, section_bytes, 0, received);
+                                            section_flag = true;
+                                            break;
+                                        }
+                                        else
+                                        {
+                                                bytes = new byte[receive_byts];
+                                                Array.Copy(memory, receive_bytes_remain, bytes, 0, receive_byts);
+                                                receive_comp(bytes, cancellation);
+                                                receive_bytes_remain += (int)receive_byts;                                            
+                                            // 需加入多個封包產生黏包問題
+
+                                        }
+
+
                                     }
-
-
                                 }
                             }
                         }
@@ -728,7 +740,6 @@ namespace SECS_Code
 
             }
         }
-
         internal async Task<SecsMessage> SendDataMessageAsync(SecsMessage secsMessage, int systemByte)
         {
             if(connectionState != ConnectionState.Selected)
@@ -774,7 +785,7 @@ namespace SECS_Code
             return await token.Task;
         }
 
-        private void SendDataMessage_Completed(object sender, SocketAsyncEventArgs e)
+        private async void SendDataMessage_Completed(object sender, SocketAsyncEventArgs e)
         {
             var completeToken = e.UserToken as TaskCompletionSourceToken;
             if(e.SocketError != SocketError.Success)
@@ -785,49 +796,31 @@ namespace SECS_Code
             }
 
             //Console.WriteLine($"[{DateTime.Now.ToString("yyyyMMddHHmmssfff")}]" + "Send Data Message: " + completeToken.MessageSent.ToString());
-            
-            if (_replyExpectedMsgs.ContainsKey(completeToken.Id))
+
+            if (!_replyExpectedMsgs.ContainsKey(completeToken.Id))
             {
-                /*
+                
                 completeToken.SetResult(null);
                 return;
-                */
-                try
-                {
-                    if (!completeToken.Task.Wait(T3))
-                    {
-                        Utility.Log(4, $"T3 Timeout[id={completeToken.Id}]: {T3 / 1000} sec.");
-                        /*
-                        MessageHeader header = new MessageHeader();
-                        header.S = completeToken.MessageSent.S;
-                        header.F = completeToken.MessageSent.F;
-                        header.ReplyExpection = completeToken.MessageSent.ReplyExpected;
-                        header.DeviceId = DeviceId;
-                        header.id = completeToken.Id;
-                        SecsMessage T3TimeoutErrorMsg = new SecsMessage(9, 9, false)
-                        {
-                            SecsItem = Item.B(header.EncodeTo())
-                        };
-                        Console.WriteLine("T3TimeoutErrorMsg:" + T3TimeoutErrorMsg.ReplyExpected);
-                        SendDataMessageAsync(T3TimeoutErrorMsg, completeToken.Id);
-                        completeToken.SetException(new SecsException(completeToken.MessageSent, "T3Timeout"));
-                        */
-                        LinkTest_Enabled = false;
-                    }
-                }
-                catch (Exception)
-                {
-                }
-                finally
-                {
-                    //Console.WriteLine("Out: " + completeToken.Id);
-                    var test = _replyExpectedMsgs.TryRemove(completeToken.Id, out TaskCompletionSourceToken _);
-                    //Console.WriteLine("SUCCESS?: " + test);
-                }
                 
             }
 
-            
+            try
+            {
+                await completeToken.Task.WaitAsync(TimeSpan.FromMilliseconds(T3)).ConfigureAwait(false);
+            }
+            catch (TimeoutException)
+            {
+                Utility.Log(4, $"T3 Timeout[id={(uint)completeToken.Id}]: {T3 / 1000} sec.");
+                LinkTest_Enabled = false;
+                Test.T3_flag = true;
+            }
+            finally
+            {
+                //Console.WriteLine("Out: " + completeToken.Id);
+                var test = _replyExpectedMsgs.TryRemove(completeToken.Id, out TaskCompletionSourceToken _);
+                //Console.WriteLine("SUCCESS?: " + test);
+            }
         }
         public static void StartT8Timer()
         {
