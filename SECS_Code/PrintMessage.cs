@@ -273,7 +273,7 @@
                 }
                 else
                 {
-                    if (item1.Format == SecsFormat.A || item1.Format == SecsFormat.TF || item1.Format == SecsFormat.JIS8)
+                    if (item1.Format == SecsFormat.A || item1.Format == SecsFormat.JIS8)
                     {
                         PrintTemp(count);
                         Console.WriteLine($"    <{item1.Format} [{item1.Count}] \"{item1.Value}\">");
