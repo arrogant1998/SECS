@@ -10,6 +10,10 @@ var app = builder.Build();
 //var test = new Test();
 var test = new Worker(configuration);
 // Configure the HTTP request pipeline.
+while(true){
+    Thread.Sleep(86400000);
+}
+/*
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
@@ -22,5 +26,5 @@ app.UseAuthorization();
 app.MapRazorPages();
 
 app.Run();
-
+*/
 
