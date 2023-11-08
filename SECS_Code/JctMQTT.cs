@@ -66,7 +66,7 @@ namespace SECS_Code
                                 {
                                     
                                     datas.Clear();
-                                    GetData(text);
+                                    //GetData(text);
                                     
                                 }
 
