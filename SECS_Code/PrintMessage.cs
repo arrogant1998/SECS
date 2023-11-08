@@ -294,7 +294,7 @@
                         {
                             foreach (var bytes in item1.Value)
                             {
-                                Console.Write(bytes + " ");
+                                Console.Write(bytes.ToString() + " ");
                             }
                             Console.WriteLine(">");
                         }
