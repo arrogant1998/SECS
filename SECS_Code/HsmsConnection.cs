@@ -441,11 +441,13 @@ namespace SECS_Code
                     var received = await _socket.ReceiveAsync(memory, SocketFlags.None);
                     if(received > 0)
                     {
+                        /*
                         for (int i = 0; i < received; i++)
                         {
                             Console.Write("0x" + memory[i].ToString("x2") + ", ");
                         }
                         Console.WriteLine();
+                        */
                     }
                     
                     if (received > 0)
