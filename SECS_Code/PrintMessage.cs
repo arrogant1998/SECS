@@ -1,4 +1,4 @@
-﻿namespace SECS_Code
+namespace SECS_Code
 {
     public class PrintMessage
     {
@@ -45,6 +45,22 @@
                                                 }
                                                 Console.WriteLine(">");
                                             }
+                                            else if (item2.Format == SecsFormat.TF)
+                                            {
+                                                foreach (var bytes in item2.Value)
+                                                {
+                                                    if ((bool)bytes)
+                                                    {
+                                                        Console.Write("0x01" + " ");
+                                                    }
+                                                    else
+                                                    {
+                                                        Console.Write("0x00" + " ");
+                                                    }
+
+                                                }
+                                                Console.WriteLine(">");
+                                            }
                                             else
                                             {
                                                 foreach (var bytes in item2.Value)
@@ -78,6 +94,22 @@
                                         }
                                         Console.WriteLine(">");
                                     }
+                                    else if (item.Format == SecsFormat.TF)
+                                    {
+                                        foreach (var bytes in item.Value)
+                                        {
+                                            if ((bool)bytes)
+                                            {
+                                                Console.Write("0x01" + " ");
+                                            }
+                                            else
+                                            {
+                                                Console.Write("0x00" + " ");
+                                            }
+
+                                        }
+                                        Console.WriteLine(">");
+                                    }
                                     else
                                     {
                                         foreach (var bytes in item.Value)
@@ -87,13 +119,6 @@
                                         Console.WriteLine(">");
                                     }
                                 }
-                                /*
-                                foreach (var bytes in item._rawData)
-                                {
-                                    Console.Write(bytes.ToString("x2") + " ");
-                                }
-                                Console.WriteLine();
-                                */
                             }
                         }
                         Console.WriteLine(">");
@@ -113,6 +138,22 @@
                                 foreach (byte bytes in secsMessage.SecsItem.Value)
                                 {
                                     Console.Write("0x" + bytes.ToString("x2") + " ");
+                                }
+                                Console.WriteLine(">");
+                            }
+                            else if (secsMessage.SecsItem.Format == SecsFormat.TF)
+                            {
+                                foreach (var bytes in secsMessage.SecsItem.Value)
+                                {
+                                    if ((bool)bytes)
+                                    {
+                                        Console.Write("0x01" + " ");
+                                    }
+                                    else
+                                    {
+                                        Console.Write("0x00" + " ");
+                                    }
+
                                 }
                                 Console.WriteLine(">");
                             }
@@ -176,6 +217,22 @@
                                             }
                                             Console.WriteLine(">");
                                         }
+                                        else if(item2.Format == SecsFormat.TF)
+                                        {
+                                            foreach (var bytes in item2.Value)
+                                            {
+                                                if ((bool)bytes)
+                                                {
+                                                    Console.Write("0x01" + " ");
+                                                }
+                                                else
+                                                {
+                                                    Console.Write("0x00" + " ");
+                                                }
+                                                
+                                            }
+                                            Console.WriteLine(">");
+                                        }
                                         else
                                         {
                                             foreach (var bytes in item2.Value)
@@ -208,11 +265,27 @@
                                     }
                                     Console.WriteLine(">");
                                 }
+                                else if (item.Format == SecsFormat.TF)
+                                {
+                                    foreach (var bytes in item.Value)
+                                    {
+                                        if ((bool)bytes)
+                                        {
+                                            Console.Write("0x01" + " ");
+                                        }
+                                        else
+                                        {
+                                            Console.Write("0x00" + " ");
+                                        }
+
+                                    }
+                                    Console.WriteLine(">");
+                                }
                                 else
                                 {
                                     foreach (var bytes in item.Value)
                                     {
-                                        Console.Write(bytes + " ");
+                                        Console.Write(bytes.ToString() + " ");
                                     }
                                     Console.WriteLine(">");
                                 }
@@ -245,11 +318,27 @@
                             }
                             Console.WriteLine(">");
                         }
+                        else if (secsMessage.SecsItem.Format == SecsFormat.TF)
+                        {
+                            foreach (var bytes in secsMessage.SecsItem.Value)
+                            {
+                                if ((bool)bytes)
+                                {
+                                    Console.Write("0x01" + " ");
+                                }
+                                else
+                                {
+                                    Console.Write("0x00" + " ");
+                                }
+
+                            }
+                            Console.WriteLine(">");
+                        }
                         else
                         {
                             foreach (var bytes in secsMessage.SecsItem.Value)
                             {
-                                Console.Write(bytes + " ");
+                                Console.Write(bytes.ToString() + " ");
                             }
                             Console.WriteLine(">");
                         }
@@ -287,6 +376,22 @@
                             foreach (byte bytes in item1.Value)
                             {
                                 Console.Write("0x" + bytes.ToString("x2") + " ");
+                            }
+                            Console.WriteLine(">");
+                        }
+                        else if (item1.Format == SecsFormat.TF)
+                        {
+                            foreach (var bytes in item1.Value)
+                            {
+                                if ((bool)bytes)
+                                {
+                                    Console.Write("0x01" + " ");
+                                }
+                                else
+                                {
+                                    Console.Write("0x00" + " ");
+                                }
+
                             }
                             Console.WriteLine(">");
                         }
