@@ -813,7 +813,7 @@ namespace SECS_Code
             {
                 Utility.Log(4, $"T3 Timeout[id={(uint)completeToken.Id}]: {T3 / 1000} sec.");
                 LinkTest_Enabled = false;
-                Test.T3_flag = true;
+                //Test.T3_flag = true;
             }
             finally
             {
